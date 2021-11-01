@@ -3,7 +3,7 @@ import axios from 'axios';
 import TextArea from "antd/es/input/TextArea";
 import {Button, Radio} from 'antd';
 import {CopyToClipboard} from "react-copy-to-clipboard/lib/Component";
-
+import {getFiles} from "../services/upload";
 
 
 class AnalyzerForm extends React.Component {
@@ -11,6 +11,7 @@ class AnalyzerForm extends React.Component {
         copied: false,
         text: "",
         value1: "KeySentence",
+        result: ""
     }
 
 
@@ -24,19 +25,31 @@ class AnalyzerForm extends React.Component {
         console.log(this.state.text)
 
         if (this.state.value1 == "KeySentence") {
-            axios.post(`https://jsonplaceholder.typicode.com/users`,{"text":this.state.text})
+            axios.post(`http://54.208.161.236:5000/ext`,{"text":this.state.text})
                 .then(res => {
+                    const result = res.data.response;
+                    this.setState({result})
                     console.log(res);
+
                 })
         } else if (this.state.value1 == "KeyWords") {
-            axios.post(`https://jsonplaceholder.typicode.com/XXXXXX`,{"text":this.state.text})
+            axios.post(
+                `http://54.208.161.236:5000/kwords`, {"text":this.state.text})
                 .then(res => {
-                    console.log(res);
+                    const output = res.data.response;
+                    console.log(res.data.response)
+                    let result = output.map(a => a.parsed_value)
+                    console.log(result)
+                    this.setState({result})
+
+
                 })
 
         } else if (this.state.value1 == "Summary") {
-            axios.post(`https://jsonplaceholder.typicode.com/YYYYYY`,{"text":this.state.text})
+            axios.post(`http://54.208.161.236:5000/abs`,{"text":this.state.text})
                 .then(res => {
+                    const result = res.data.response;
+                    this.setState({result})
                     console.log(res);
                 })
         }
@@ -96,10 +109,11 @@ class AnalyzerForm extends React.Component {
                     <TextArea
                         className="Output"
                         autoSize={{ minRows: 20, maxRows: 40}}
+                        value={ this.state.result }
                     >
-                        { this.state.text }
                     </TextArea>
-                    <CopyToClipboard className="Copy" text={this.state.text}
+
+                    <CopyToClipboard className="Copy" text={this.state.result}
                                      onCopy={() => this.setState({copied: true})}>
                         <Button className="CopyButton">Copy</Button>
                     </CopyToClipboard>
