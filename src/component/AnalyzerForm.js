@@ -9,14 +9,15 @@ import {getFiles} from "../services/upload";
 class AnalyzerForm extends React.Component {
     state = {
         copied: false,
-        text: "",
         value1: "KeySentence",
-        result: ""
+        result: "",
+        trans: ""
     }
 
 
+
     handleChange = event => {
-        this.setState({ text: event.target.value });
+        this.setState({ trans: event.target.value });
     }
 
 
@@ -25,7 +26,7 @@ class AnalyzerForm extends React.Component {
         console.log(this.state.text)
 
         if (this.state.value1 == "KeySentence") {
-            axios.post(`http://54.208.161.236:5000/ext`,{"text":this.state.text})
+            axios.post(`http://3.80.79.28:5000/ext`,{"text":this.state.trans})
                 .then(res => {
                     const result = res.data.response;
                     this.setState({result})
@@ -34,7 +35,7 @@ class AnalyzerForm extends React.Component {
                 })
         } else if (this.state.value1 == "KeyWords") {
             axios.post(
-                `http://54.208.161.236:5000/kwords`, {"text":this.state.text})
+                `http://3.80.79.28:5000/kwords`, {"text":this.state.trans})
                 .then(res => {
                     const output = res.data.response;
                     console.log(res.data.response)
@@ -46,7 +47,7 @@ class AnalyzerForm extends React.Component {
                 })
 
         } else if (this.state.value1 == "Summary") {
-            axios.post(`http://54.208.161.236:5000/abs`,{"text":this.state.text})
+            axios.post(`http://3.80.79.28:5000/abs`,{"text":this.state.trans})
                 .then(res => {
                     const result = res.data.response;
                     this.setState({result})
@@ -76,6 +77,12 @@ class AnalyzerForm extends React.Component {
         });
     };
 
+    componentWillReceiveProps(nextProps) {
+        console.log('componentWillReceiveProps', nextProps);
+        this.setState({trans: nextProps.trans});
+    }
+
+
 
 //输入需要分析的文本，用文本去请求接口，拿到返回的值
     render() {
@@ -96,7 +103,9 @@ class AnalyzerForm extends React.Component {
                                 onChange={this.handleChange}
                                 showCount maxLength={2500}
                                 allowClear
-                            />
+                                value={this.state.trans}
+                            >
+                            </TextArea>
                         </label>
                         <div className='Analyze-Button'>
                             <button  className="Submit" type="submit">Analyze</button>

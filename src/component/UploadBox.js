@@ -1,109 +1,64 @@
-import { Upload, Modal } from 'antd';
-import { PlusOutlined } from '@ant-design/icons';
-import ReactDOM from "react-dom";
 import React from "react";
+import firebase from '../firebase'
+import axios from "axios";
 
-function getBase64(file) {
-    return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.readAsDataURL(file);
-        reader.onload = () => resolve(reader.result);
-        reader.onerror = error => reject(error);
-    });
-}
 
-class PicturesWall extends React.Component {
-    state = {
-        previewVisible: false,
-        previewImage: '',
-        previewTitle: '',
-        fileList: [
-            {
-                uid: '-1',
-                name: 'image.png',
-                status: 'done',
-                url: 'https://zos.alipayobjects.com/rmsportal/jkjgkEfvpUPVyRjUImniVslZfWPnJuuZ.png',
-            },
-            {
-                uid: '-2',
-                name: 'image.png',
-                status: 'done',
-                url: 'https://zos.alipayobjects.com/rmsportal/jkjgkEfvpUPVyRjUImniVslZfWPnJuuZ.png',
-            },
-            {
-                uid: '-3',
-                name: 'image.png',
-                status: 'done',
-                url: 'https://zos.alipayobjects.com/rmsportal/jkjgkEfvpUPVyRjUImniVslZfWPnJuuZ.png',
-            },
-            {
-                uid: '-4',
-                name: 'image.png',
-                status: 'done',
-                url: 'https://zos.alipayobjects.com/rmsportal/jkjgkEfvpUPVyRjUImniVslZfWPnJuuZ.png',
-            },
-            {
-                uid: '-xxx',
-                percent: 50,
-                name: 'image.png',
-                status: 'uploading',
-                url: 'https://zos.alipayobjects.com/rmsportal/jkjgkEfvpUPVyRjUImniVslZfWPnJuuZ.png',
-            },
-            {
-                uid: '-5',
-                name: 'image.png',
-                status: 'error',
-            },
-        ],
-    };
 
-    handleCancel = () => this.setState({ previewVisible: false });
+class UploadVideo extends React.Component {
+    constructor(props) {
+        super(props);
+        this.state={
+            files : null,
+            text: '',
+            trans: ''
 
-    handlePreview = async file => {
-        if (!file.url && !file.preview) {
-            file.preview = await getBase64(file.originFileObj);
+
         }
+    }
 
+    handleChange = (files) => {
         this.setState({
-            previewImage: file.url || file.preview,
-            previewVisible: true,
-            previewTitle: file.name || file.url.substring(file.url.lastIndexOf('/') + 1),
-        });
-    };
+            files : files
+        })
+    }
+    handleSave =()=>{
+        let bucketName = 'files'
+        let file = this.state.files[0]
+        let storageRef = firebase.storage().ref(`${bucketName}/${file.name}`)
+        let uploadTask = storageRef.put(file)
+        uploadTask.on(firebase.storage.TaskEvent.STATE_CHANGED,
+            ()=>{
+                let downloadURL = uploadTask.snapshot.downloadURL
+                console.log(downloadURL)
+                let uri = (`gs://` + storageRef.bucket + `/` + storageRef.fullPath)
+                console.log(uri)
+                axios.post(
+                    'http://3.80.79.28:5000/transcribe', {
+                        "uri": uri,
+                        "type": "video"
+                    }
+                )
+                    .then(res => {
+                        console.log(res)
+                        let trans = res.data.response
+                        this.props.updateUrl(trans)
+                    })
+            })
 
-    handleChange = ({ fileList }) => this.setState({ fileList });
+
+    }
+
+
 
     render() {
-        const { previewVisible, previewImage, fileList, previewTitle } = this.state;
-        const uploadButton = (
-            <div>
-                <PlusOutlined />
-                <div style={{ marginTop: 8 }}>Upload</div>
-            </div>
-        );
         return (
-            <>
-                <Upload
-                    action="https://www.mocky.io/v2/5cc8019d300000980a055e76"
-                    listType="picture-card"
-                    fileList={fileList}
-                    onPreview={this.handlePreview}
-                    onChange={this.handleChange}
-                >
-                    {fileList.length >= 8 ? null : uploadButton}
-                </Upload>
-                <Modal
-                    visible={previewVisible}
-                    title={previewTitle}
-                    footer={null}
-                    onCancel={this.handleCancel}
-                >
-                    <img alt="example" style={{ width: '100%' }} src={previewImage} />
-                </Modal>
-            </>
-        );
+            <div>
+                <input type="file" onChange={(e)=>{this.handleChange(e.target.files)}} />
+                <button onClick={this.handleSave}>Upload Video</button>
+
+            </div>
+        )
     }
+
 }
-
-
-export default PicturesWall
+export default UploadVideo
